@@ -176,25 +176,32 @@ def build_solver(config: Config) -> Tuple[cp_model.CpModel, Dict, List[int], Lis
         penalties.append(diff * 8)
 
     # Minimizar plantonista extra e dobradinhas.
-    # Regra obrigatória da dobradinha: quando Ana ou Danielle fizer a noite
-    # de um dia e também trabalhar no dia seguinte, ela só poderá assumir
-    # o turno das 07h às 16h. É proibido seguir para 10h–19h ou 07h–19h.
+    # Regra obrigatória da dobradinha:
+    # - é proibido trabalhar durante o dia e iniciar a noite às 19h no mesmo dia;
+    # - a única dobradinha permitida começa às 19h e termina às 16h do dia seguinte,
+    #   isto é: Noite 19h–07h + Dia 07h–16h do dia seguinte.
     for d in days:
         penalties.append(x[extra, d, "Noite 19h–07h"] * 10000)
-        if d < days[-1]:
-            next_day = d + 1
-            for p in [ana, dani]:
-                night = x[p, d, "Noite 19h–07h"]
+
+        for p in [ana, dani]:
+            night = x[p, d, "Noite 19h–07h"]
+
+            # Proíbe a sequência incorreta 07h/10h durante o dia + noite às 19h.
+            # Assim, ninguém pode começar às 07h e seguir até às 16h do outro dia.
+            model.Add(night + x[p, d, "Dia 07h–16h"] <= 1)
+            model.Add(night + x[p, d, "Dia 10h–19h"] <= 1)
+            model.Add(night + x[p, d, "Dom/Feriado 07h–19h"] <= 1)
+
+            if d < days[-1]:
+                next_day = d + 1
                 early_next = x[p, next_day, "Dia 07h–16h"]
                 late_next = x[p, next_day, "Dia 10h–19h"]
                 special_next = x[p, next_day, "Dom/Feriado 07h–19h"]
 
-                # Após trabalhar à noite, não pode cumprir 10h–19h nem
-                # domingo/feriado 07h–19h no dia seguinte.
+                # Após a noite, a única continuidade permitida é 07h–16h.
                 model.Add(night + late_next <= 1)
                 model.Add(night + special_next <= 1)
 
-                # A única dobradinha permitida é 19h–07h + 07h–16h.
                 double = model.NewBoolVar(f"double_{p}_{d}")
                 model.Add(double <= night)
                 model.Add(double <= early_next)
