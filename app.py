@@ -175,21 +175,30 @@ def build_solver(config: Config) -> Tuple[cp_model.CpModel, Dict, List[int], Lis
         model.AddAbsEquality(diff, counts[p1] - counts[p2])
         penalties.append(diff * 8)
 
-    # Minimizar plantonista extra e noite seguida de trabalho diurno.
+    # Minimizar plantonista extra e dobradinhas.
+    # Regra obrigatória da dobradinha: quando Ana ou Danielle fizer a noite
+    # de um dia e também trabalhar no dia seguinte, ela só poderá assumir
+    # o turno das 07h às 16h. É proibido seguir para 10h–19h ou 07h–19h.
     for d in days:
         penalties.append(x[extra, d, "Noite 19h–07h"] * 10000)
         if d < days[-1]:
             next_day = d + 1
             for p in [ana, dani]:
+                night = x[p, d, "Noite 19h–07h"]
+                early_next = x[p, next_day, "Dia 07h–16h"]
+                late_next = x[p, next_day, "Dia 10h–19h"]
+                special_next = x[p, next_day, "Dom/Feriado 07h–19h"]
+
+                # Após trabalhar à noite, não pode cumprir 10h–19h nem
+                # domingo/feriado 07h–19h no dia seguinte.
+                model.Add(night + late_next <= 1)
+                model.Add(night + special_next <= 1)
+
+                # A única dobradinha permitida é 19h–07h + 07h–16h.
                 double = model.NewBoolVar(f"double_{p}_{d}")
-                next_day_work = (
-                    x[p, next_day, "Dia 07h–16h"]
-                    + x[p, next_day, "Dia 10h–19h"]
-                    + x[p, next_day, "Dom/Feriado 07h–19h"]
-                )
-                model.Add(double <= x[p, d, "Noite 19h–07h"])
-                model.Add(double <= next_day_work)
-                model.Add(double >= x[p, d, "Noite 19h–07h"] + next_day_work - 1)
+                model.Add(double <= night)
+                model.Add(double <= early_next)
+                model.Add(double >= night + early_next - 1)
                 penalties.append(double * 30)
 
     model.Minimize(sum(penalties))
