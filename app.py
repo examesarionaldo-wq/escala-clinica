@@ -138,12 +138,32 @@ def build_solver(config: Config) -> Tuple[cp_model.CpModel, Dict, List[int], Lis
 
     penalties = []
 
-    # Equilibrar noites de Ana e Danielle.
+    # Equilibrar os plantões noturnos de Ana e Danielle.
+    # A diferença é minimizada com prioridade alta: igualdade quando possível
+    # e diferença mínima quando o número de noites disponíveis for ímpar.
     nights_ana = sum(x[ana, d, "Noite 19h–07h"] for d in days)
     nights_dani = sum(x[dani, d, "Noite 19h–07h"] for d in days)
     diff_nights = model.NewIntVar(0, len(days), "diff_nights")
     model.AddAbsEquality(diff_nights, nights_ana - nights_dani)
-    penalties.append(diff_nights * 20)
+    penalties.append(diff_nights * 1000)
+
+    # Equilibrar todos os plantões diurnos de Ana e Danielle, incluindo
+    # turnos de segunda a sábado, domingos e feriados.
+    days_ana = sum(
+        x[ana, d, "Dia 07h–16h"]
+        + x[ana, d, "Dia 10h–19h"]
+        + x[ana, d, "Dom/Feriado 07h–19h"]
+        for d in days
+    )
+    days_dani = sum(
+        x[dani, d, "Dia 07h–16h"]
+        + x[dani, d, "Dia 10h–19h"]
+        + x[dani, d, "Dom/Feriado 07h–19h"]
+        for d in days
+    )
+    diff_days = model.NewIntVar(0, len(days), "diff_days")
+    model.AddAbsEquality(diff_days, days_ana - days_dani)
+    penalties.append(diff_days * 1000)
 
     # Equilibrar domingos/feriados.
     specials = [d for d in days if weekday(config.year, config.month, d) == 6 or d in config.holidays]
@@ -157,7 +177,7 @@ def build_solver(config: Config) -> Tuple[cp_model.CpModel, Dict, List[int], Lis
 
     # Minimizar plantonista extra e noite seguida de trabalho diurno.
     for d in days:
-        penalties.append(x[extra, d, "Noite 19h–07h"] * 100)
+        penalties.append(x[extra, d, "Noite 19h–07h"] * 10000)
         if d < days[-1]:
             next_day = d + 1
             for p in [ana, dani]:
@@ -351,6 +371,7 @@ with st.expander("Regras aplicadas nesta versão"):
 - Nicolle trabalha apenas nas noites fixadas.
 - Demais noites divididas entre Ana e Danielle.
 - Plantonista extra apenas em noites de sábado ou domingo e somente quando necessário.
-- O sistema minimiza plantonista extra, desequilíbrio de noites e noites seguidas de trabalho diurno.
+- Ana e Danielle devem ter o mesmo número de plantões diurnos e noturnos; quando o empate exato não for possível, o sistema usa a menor diferença possível.
+- O sistema minimiza plantonista extra e noites seguidas de trabalho diurno.
 """
     )
