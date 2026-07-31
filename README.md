@@ -27,3 +27,8 @@ Aplicativo gratuito em Streamlit para gerar escalas de trabalho da clínica vete
 ## Observação sobre armazenamento
 
 Esta versão não usa banco de dados. As configurações existem durante a sessão e podem ser baixadas em JSON. Isso mantém o projeto gratuito e simples.
+
+
+## Regra de equilíbrio
+
+Ana e Danielle recebem o mesmo número de plantões diurnos e noturnos sempre que matematicamente possível. Quando o total disponível for ímpar ou houver restrições incompatíveis, o aplicativo minimiza a diferença entre elas. Os plantões diurnos incluem os turnos regulares, domingos e feriados.
