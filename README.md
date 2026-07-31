@@ -1,0 +1,29 @@
+# Gerador de Escalas da Clínica
+
+Aplicativo gratuito em Streamlit para gerar escalas de trabalho da clínica veterinária.
+
+## Arquivos
+
+- `app.py`: aplicativo completo.
+- `requirements.txt`: dependências instaladas automaticamente pelo Streamlit.
+
+## Publicação gratuita
+
+1. Crie uma conta gratuita no GitHub.
+2. Crie um novo repositório, por exemplo `escala-clinica`.
+3. Envie `app.py` e `requirements.txt` para a raiz do repositório.
+4. Entre no Streamlit Community Cloud usando a conta do GitHub.
+5. Clique em **Create app**.
+6. Escolha o repositório, a branch `main` e o arquivo `app.py`.
+7. Clique em **Deploy**.
+
+## Uso
+
+1. Escolha o mês e o ano.
+2. Informe feriados, folgas e noites fixas de Nicolle.
+3. Clique em **Gerar escala**.
+4. Confira o resumo e baixe o Excel.
+
+## Observação sobre armazenamento
+
+Esta versão não usa banco de dados. As configurações existem durante a sessão e podem ser baixadas em JSON. Isso mantém o projeto gratuito e simples.
