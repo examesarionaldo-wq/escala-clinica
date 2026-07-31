@@ -36,3 +36,5 @@ Ana e Danielle recebem o mesmo número de plantões diurnos e noturnos sempre qu
 ## Regra obrigatória de dobradinha
 
 Quando Ana ou Danielle trabalhar no plantão noturno das 19h às 07h e também precisar trabalhar no dia seguinte, o único turno permitido será das 07h às 16h. Assim, a jornada começa às 19h e termina às 16h do dia seguinte. O sistema proíbe o turno das 10h às 19h e o plantão de domingo/feriado das 07h às 19h após uma noite.
+
+- O primeiro domingo pode ser atribuído a Ana, Danielle ou Suzana.

@@ -133,7 +133,7 @@ def build_solver(config: Config) -> Tuple[cp_model.CpModel, Dict, List[int], Lis
 
     # Primeiro domingo.
     sundays = [d for d in days if weekday(config.year, config.month, d) == 6]
-    if sundays and config.first_sunday in [dani, suzana]:
+    if sundays and config.first_sunday in [ana, dani, suzana]:
         model.Add(x[config.first_sunday, sundays[0], "Dom/Feriado 07h–19h"] == 1)
 
     penalties = []
@@ -300,7 +300,7 @@ with st.sidebar:
     days = month_days(int(year), int(month))
 
     holidays = st.multiselect("Feriados do mês", days, help="Selecione apenas os números dos dias.")
-    first_sunday = st.selectbox("Primeiro domingo", ["Danielle", "Suzana"])
+    first_sunday = st.selectbox("Primeiro domingo", ["Ana", "Danielle", "Suzana"])
 
     st.subheader("Noites fixas")
     fixed_night_days = st.multiselect("Dias de Nicolle", days, default=[d for d in [17, 24, 25, 27, 31] if d in days])
