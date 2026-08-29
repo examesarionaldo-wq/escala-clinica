@@ -245,6 +245,8 @@ def build_solver(config: Config) -> Tuple[cp_model.CpModel, Dict, List[int], Lis
         penalties.append(diff * 8)
 
     # Minimizar plantonista extra e dobradinhas.
+    # Também equilibrar a quantidade de dobradinhas entre Ana e Danielle.
+    double_vars = {ana: [], dani: []}
     # Dobradinhas recebem penalidade muito alta para que o solver só as use
     # quando forem realmente necessárias para manter a escala viável. A
     # distribuição semanal nunca deve ser "melhorada" criando dobradinhas.
@@ -281,6 +283,7 @@ def build_solver(config: Config) -> Tuple[cp_model.CpModel, Dict, List[int], Lis
                     model.Add(double <= night)
                     model.Add(double <= early_next)
                     model.Add(double >= night + early_next - 1)
+                    double_vars[p].append(double)
                     penalties.append(double * 5000)
 
                     # Se Ana ou Danielle fizer sexta à noite + sábado 07h–16h,
@@ -293,6 +296,16 @@ def build_solver(config: Config) -> Tuple[cp_model.CpModel, Dict, List[int], Lis
                 else:
                     # Em qualquer outro dia da semana, a dobradinha é proibida.
                     model.Add(night + early_next <= 1)
+
+    # Equilíbrio das dobradinhas entre Ana e Danielle.
+    # O solver busca igualdade exata; se o total necessário for ímpar,
+    # minimiza a diferença para no máximo 1 sempre que a escala permitir.
+    doubles_ana = sum(double_vars[ana]) if double_vars[ana] else 0
+    doubles_dani = sum(double_vars[dani]) if double_vars[dani] else 0
+    max_doubles = max(len(double_vars[ana]), len(double_vars[dani]), 1)
+    diff_doubles = model.NewIntVar(0, max_doubles, "diff_doubles")
+    model.AddAbsEquality(diff_doubles, doubles_ana - doubles_dani)
+    penalties.append(diff_doubles * 4000)
 
     model.Minimize(sum(penalties))
     return model, x, days, staff, shifts
@@ -476,6 +489,7 @@ with st.expander("Regras aplicadas nesta versão"):
 - Ana e Danielle devem ter o mesmo número de plantões diurnos e noturnos; quando o empate exato não for possível, o sistema usa a menor diferença possível.
 - O sistema minimiza plantonista extra e dobradinhas.
 - A única dobradinha permitida é de sexta à noite para sábado das 07h às 16h.
+- Ana e Danielle devem ter o mesmo número de dobradinhas; quando o total necessário for ímpar, o sistema mantém a diferença mínima possível.
 - A mesma veterinária não pode trabalhar em dois domingos consecutivos.
 """
     )

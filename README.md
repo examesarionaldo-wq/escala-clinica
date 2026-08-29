@@ -64,3 +64,7 @@ A dobradinha de Ana e Danielle é permitida somente de sexta-feira à noite para
 
 ### Regra de domingos consecutivos
 Ana, Danielle e Suzana não podem ser escaladas em dois domingos consecutivos. O sistema deve alternar a responsável pelos domingos, respeitando indisponibilidades e demais regras obrigatórias.
+
+
+### Equilíbrio de dobradinhas
+Ana e Danielle devem receber o mesmo número de dobradinhas. Quando o número total de dobradinhas necessário for ímpar ou houver restrições que impeçam igualdade exata, o aplicativo minimiza a diferença entre elas. A dobradinha continua permitida somente de sexta-feira à noite para sábado 07h–16h, com folga obrigatória no domingo seguinte.
