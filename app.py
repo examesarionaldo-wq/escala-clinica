@@ -236,6 +236,9 @@ def build_solver(config: Config) -> Tuple[cp_model.CpModel, Dict, List[int], Lis
         penalties.append(diff * 8)
 
     # Minimizar plantonista extra e dobradinhas.
+    # Dobradinhas recebem penalidade muito alta para que o solver só as use
+    # quando forem realmente necessárias para manter a escala viável. A
+    # distribuição semanal nunca deve ser "melhorada" criando dobradinhas.
     # Regra obrigatória da dobradinha:
     # - é proibido trabalhar durante o dia e iniciar a noite às 19h no mesmo dia;
     # - a única dobradinha permitida começa às 19h e termina às 16h do dia seguinte,
@@ -258,24 +261,29 @@ def build_solver(config: Config) -> Tuple[cp_model.CpModel, Dict, List[int], Lis
                 late_next = x[p, next_day, "Dia 10h–19h"]
                 special_next = x[p, next_day, "Dom/Feriado 07h–19h"]
 
-                # Após a noite, a única continuidade permitida é 07h–16h.
+                # Após a noite, a única continuidade possível seria 07h–16h.
+                # Porém, essa dobradinha é permitida APENAS de sexta para sábado.
                 model.Add(night + late_next <= 1)
                 model.Add(night + special_next <= 1)
 
-                double = model.NewBoolVar(f"double_{p}_{d}")
-                model.Add(double <= night)
-                model.Add(double <= early_next)
-                model.Add(double >= night + early_next - 1)
-                penalties.append(double * 30)
+                is_friday_night = weekday(config.year, config.month, d) == 4 and weekday(config.year, config.month, next_day) == 5
+                if is_friday_night:
+                    double = model.NewBoolVar(f"double_{p}_{d}")
+                    model.Add(double <= night)
+                    model.Add(double <= early_next)
+                    model.Add(double >= night + early_next - 1)
+                    penalties.append(double * 5000)
 
-                # Regra adicional para dobradinha de fim de semana:
-                # se Ana ou Danielle fizer sexta à noite + sábado 07h–16h,
-                # deve folgar o domingo inteiro (sem plantão diurno e sem noite).
-                if weekday(config.year, config.month, d) == 4 and d + 2 <= days[-1]:
-                    sunday = d + 2
-                    if weekday(config.year, config.month, sunday) == 6:
-                        model.Add(x[p, sunday, "Dom/Feriado 07h–19h"] + double <= 1)
-                        model.Add(x[p, sunday, "Noite 19h–07h"] + double <= 1)
+                    # Se Ana ou Danielle fizer sexta à noite + sábado 07h–16h,
+                    # deve folgar o domingo inteiro seguinte.
+                    if d + 2 <= days[-1]:
+                        sunday = d + 2
+                        if weekday(config.year, config.month, sunday) == 6:
+                            model.Add(x[p, sunday, "Dom/Feriado 07h–19h"] + double <= 1)
+                            model.Add(x[p, sunday, "Noite 19h–07h"] + double <= 1)
+                else:
+                    # Em qualquer outro dia da semana, a dobradinha é proibida.
+                    model.Add(night + early_next <= 1)
 
     model.Minimize(sum(penalties))
     return model, x, days, staff, shifts
@@ -457,6 +465,7 @@ with st.expander("Regras aplicadas nesta versão"):
 - Demais noites divididas entre Ana e Danielle.
 - Plantonista extra apenas em noites de sábado ou domingo e somente quando necessário.
 - Ana e Danielle devem ter o mesmo número de plantões diurnos e noturnos; quando o empate exato não for possível, o sistema usa a menor diferença possível.
-- O sistema minimiza plantonista extra e noites seguidas de trabalho diurno.
+- O sistema minimiza plantonista extra e dobradinhas.
+- A única dobradinha permitida é de sexta à noite para sábado das 07h às 16h.
 """
     )

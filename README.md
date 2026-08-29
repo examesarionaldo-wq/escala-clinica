@@ -51,3 +51,12 @@ Quando Ana ou Danielle fizer a dobradinha iniciada na sexta-feira às 19h e ence
 - O aplicativo agora também busca equilíbrio dentro de cada semana, evitando concentrar muitos diurnos de uma veterinária em uma semana e muitos noturnos na semana seguinte.
 - Sequências longas do mesmo tipo de plantão são penalizadas para que os dias fiquem mais intercalados ao longo do mês.
 - Essa é uma regra preferencial forte: pode ser flexibilizada quando folgas, indisponibilidades, domingos, feriados ou noites fixas tornarem a distribuição ideal impossível.
+
+
+## Ajuste de dobradinhas
+
+As dobradinhas de Ana e Danielle são fortemente penalizadas pelo otimizador e só devem ser usadas quando necessárias. A regra de distribuição semanal não pode criar dobradinhas apenas para melhorar o equilíbrio visual da escala. A única dobradinha permitida continua sendo Noite 19h–07h + Dia 07h–16h do dia seguinte.
+
+
+### Regra obrigatória nova
+A dobradinha de Ana e Danielle é permitida somente de sexta-feira à noite para sábado no turno das 07h às 16h. Em qualquer outro dia da semana, o aplicativo proíbe a sequência noite + manhã do dia seguinte.
