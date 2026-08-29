@@ -208,6 +208,15 @@ def build_solver(config: Config) -> Tuple[cp_model.CpModel, Dict, List[int], Lis
                 model.Add(double >= night + early_next - 1)
                 penalties.append(double * 30)
 
+                # Regra adicional para dobradinha de fim de semana:
+                # se Ana ou Danielle fizer sexta à noite + sábado 07h–16h,
+                # deve folgar o domingo inteiro (sem plantão diurno e sem noite).
+                if weekday(config.year, config.month, d) == 4 and d + 2 <= days[-1]:
+                    sunday = d + 2
+                    if weekday(config.year, config.month, sunday) == 6:
+                        model.Add(x[p, sunday, "Dom/Feriado 07h–19h"] + double <= 1)
+                        model.Add(x[p, sunday, "Noite 19h–07h"] + double <= 1)
+
     model.Minimize(sum(penalties))
     return model, x, days, staff, shifts
 

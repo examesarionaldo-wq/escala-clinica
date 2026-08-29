@@ -41,3 +41,7 @@ Quando Ana ou Danielle trabalhar no plantão noturno das 19h às 07h e também p
 
 ### Regra de dobradinha
 Ana e Danielle nunca podem trabalhar no turno diurno e iniciar o plantão noturno no mesmo dia. A única dobradinha permitida começa às 19h e termina às 16h do dia seguinte: noite 19h–07h seguida do turno 07h–16h.
+
+### Regra de folga após dobradinha de sexta para sábado
+
+Quando Ana ou Danielle fizer a dobradinha iniciada na sexta-feira às 19h e encerrada no sábado às 16h, ela deverá obrigatoriamente folgar o domingo inteiro seguinte. O sistema bloqueia tanto o turno diurno de domingo (07h–19h) quanto o plantão noturno de domingo (19h–07h).
