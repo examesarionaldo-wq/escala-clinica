@@ -136,6 +136,15 @@ def build_solver(config: Config) -> Tuple[cp_model.CpModel, Dict, List[int], Lis
     if sundays and config.first_sunday in [ana, dani, suzana]:
         model.Add(x[config.first_sunday, sundays[0], "Dom/Feriado 07h–19h"] == 1)
 
+    # Regra obrigatória: a mesma veterinária não pode fazer dois domingos consecutivos.
+    for p in [ana, dani, suzana]:
+        for i in range(len(sundays) - 1):
+            model.Add(
+                x[p, sundays[i], "Dom/Feriado 07h–19h"]
+                + x[p, sundays[i + 1], "Dom/Feriado 07h–19h"]
+                <= 1
+            )
+
     penalties = []
 
     # Equilibrar os plantões noturnos de Ana e Danielle.
@@ -467,5 +476,6 @@ with st.expander("Regras aplicadas nesta versão"):
 - Ana e Danielle devem ter o mesmo número de plantões diurnos e noturnos; quando o empate exato não for possível, o sistema usa a menor diferença possível.
 - O sistema minimiza plantonista extra e dobradinhas.
 - A única dobradinha permitida é de sexta à noite para sábado das 07h às 16h.
+- A mesma veterinária não pode trabalhar em dois domingos consecutivos.
 """
     )

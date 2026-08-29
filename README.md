@@ -60,3 +60,7 @@ As dobradinhas de Ana e Danielle são fortemente penalizadas pelo otimizador e s
 
 ### Regra obrigatória nova
 A dobradinha de Ana e Danielle é permitida somente de sexta-feira à noite para sábado no turno das 07h às 16h. Em qualquer outro dia da semana, o aplicativo proíbe a sequência noite + manhã do dia seguinte.
+
+
+### Regra de domingos consecutivos
+Ana, Danielle e Suzana não podem ser escaladas em dois domingos consecutivos. O sistema deve alternar a responsável pelos domingos, respeitando indisponibilidades e demais regras obrigatórias.
