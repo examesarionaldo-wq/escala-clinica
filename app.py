@@ -165,6 +165,66 @@ def build_solver(config: Config) -> Tuple[cp_model.CpModel, Dict, List[int], Lis
     model.AddAbsEquality(diff_days, days_ana - days_dani)
     penalties.append(diff_days * 1000)
 
+    # Distribuir melhor os plantões ao longo do mês.
+    # Além do equilíbrio mensal, o solver tenta manter Ana e Danielle
+    # próximas também dentro de cada semana (segunda a domingo). Isso evita
+    # concentrar uma pessoa em vários diurnos numa semana e compensar com
+    # vários noturnos na semana seguinte.
+    week_groups = {}
+    for d in days:
+        dt = date(config.year, config.month, d)
+        monday = dt.toordinal() - dt.weekday()
+        week_groups.setdefault(monday, []).append(d)
+
+    for week_index, week_days in enumerate(week_groups.values(), start=1):
+        week_day_ana = sum(
+            x[ana, d, "Dia 07h–16h"]
+            + x[ana, d, "Dia 10h–19h"]
+            + x[ana, d, "Dom/Feriado 07h–19h"]
+            for d in week_days
+        )
+        week_day_dani = sum(
+            x[dani, d, "Dia 07h–16h"]
+            + x[dani, d, "Dia 10h–19h"]
+            + x[dani, d, "Dom/Feriado 07h–19h"]
+            for d in week_days
+        )
+        week_night_ana = sum(x[ana, d, "Noite 19h–07h"] for d in week_days)
+        week_night_dani = sum(x[dani, d, "Noite 19h–07h"] for d in week_days)
+
+        max_week = len(week_days)
+        diff_week_days = model.NewIntVar(0, max_week, f"diff_week_days_{week_index}")
+        diff_week_nights = model.NewIntVar(0, max_week, f"diff_week_nights_{week_index}")
+        model.AddAbsEquality(diff_week_days, week_day_ana - week_day_dani)
+        model.AddAbsEquality(diff_week_nights, week_night_ana - week_night_dani)
+        penalties.append(diff_week_days * 120)
+        penalties.append(diff_week_nights * 120)
+
+    # Penalizar sequências longas do mesmo tipo de plantão para Ana e Dani.
+    # Janelas de 4 dias com 3 ou 4 diurnos (ou noturnos) recebem penalidade
+    # crescente. Não é uma proibição rígida, para não inviabilizar a escala
+    # quando houver indisponibilidades ou noites fixas.
+    for p in [ana, dani]:
+        day_work = {}
+        for d in days:
+            day_work[d] = (
+                x[p, d, "Dia 07h–16h"]
+                + x[p, d, "Dia 10h–19h"]
+                + x[p, d, "Dom/Feriado 07h–19h"]
+            )
+
+        for start in range(1, max(days) - 2):
+            window = [d for d in range(start, start + 4) if d in days]
+            if len(window) != 4:
+                continue
+
+            excess_days = model.NewIntVar(0, 2, f"excess_days_{p}_{start}")
+            excess_nights = model.NewIntVar(0, 2, f"excess_nights_{p}_{start}")
+            model.Add(excess_days >= sum(day_work[d] for d in window) - 2)
+            model.Add(excess_nights >= sum(x[p, d, "Noite 19h–07h"] for d in window) - 2)
+            penalties.append(excess_days * 180)
+            penalties.append(excess_nights * 180)
+
     # Equilibrar domingos/feriados.
     specials = [d for d in days if weekday(config.year, config.month, d) == 6 or d in config.holidays]
     counts = {}

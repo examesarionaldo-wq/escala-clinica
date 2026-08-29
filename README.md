@@ -45,3 +45,9 @@ Ana e Danielle nunca podem trabalhar no turno diurno e iniciar o plantão noturn
 ### Regra de folga após dobradinha de sexta para sábado
 
 Quando Ana ou Danielle fizer a dobradinha iniciada na sexta-feira às 19h e encerrada no sábado às 16h, ela deverá obrigatoriamente folgar o domingo inteiro seguinte. O sistema bloqueia tanto o turno diurno de domingo (07h–19h) quanto o plantão noturno de domingo (19h–07h).
+
+### Distribuição ao longo do mês
+- Ana e Danielle continuam com o total mensal de plantões diurnos e noturnos igual ou o mais próximo possível.
+- O aplicativo agora também busca equilíbrio dentro de cada semana, evitando concentrar muitos diurnos de uma veterinária em uma semana e muitos noturnos na semana seguinte.
+- Sequências longas do mesmo tipo de plantão são penalizadas para que os dias fiquem mais intercalados ao longo do mês.
+- Essa é uma regra preferencial forte: pode ser flexibilizada quando folgas, indisponibilidades, domingos, feriados ou noites fixas tornarem a distribuição ideal impossível.
