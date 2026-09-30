@@ -131,19 +131,22 @@ def build_solver(config: Config) -> Tuple[cp_model.CpModel, Dict, List[int], Lis
                 for s in shifts:
                     model.Add(x[person, d, s] == 0)
 
-    # Primeiro domingo.
+    # Rotação obrigatória dos domingos.
+    # O primeiro domingo é escolhido pelo usuário e, a partir dele, a ordem
+    # segue rigidamente Ana -> Danielle -> Suzana -> Ana... (ou a rotação
+    # equivalente iniciada pela pessoa escolhida). Assim, a mesma veterinária
+    # nunca fica em domingos consecutivos e não há apenas uma tentativa de
+    # equilíbrio: a sequência é uma regra obrigatória.
     sundays = [d for d in days if weekday(config.year, config.month, d) == 6]
-    if sundays and config.first_sunday in [ana, dani, suzana]:
-        model.Add(x[config.first_sunday, sundays[0], "Dom/Feriado 07h–19h"] == 1)
-
-    # Regra obrigatória: a mesma veterinária não pode fazer dois domingos consecutivos.
-    for p in [ana, dani, suzana]:
-        for i in range(len(sundays) - 1):
-            model.Add(
-                x[p, sundays[i], "Dom/Feriado 07h–19h"]
-                + x[p, sundays[i + 1], "Dom/Feriado 07h–19h"]
-                <= 1
-            )
+    sunday_order = [ana, dani, suzana]
+    if config.first_sunday in sunday_order:
+        start_idx = sunday_order.index(config.first_sunday)
+        for i, sunday in enumerate(sundays):
+            expected = sunday_order[(start_idx + i) % len(sunday_order)]
+            model.Add(x[expected, sunday, "Dom/Feriado 07h–19h"] == 1)
+            for p in sunday_order:
+                if p != expected:
+                    model.Add(x[p, sunday, "Dom/Feriado 07h–19h"] == 0)
 
     penalties = []
 
@@ -234,15 +237,9 @@ def build_solver(config: Config) -> Tuple[cp_model.CpModel, Dict, List[int], Lis
             penalties.append(excess_days * 180)
             penalties.append(excess_nights * 180)
 
-    # Equilibrar domingos/feriados.
-    specials = [d for d in days if weekday(config.year, config.month, d) == 6 or d in config.holidays]
-    counts = {}
-    for p in [ana, dani, suzana]:
-        counts[p] = sum(x[p, d, "Dom/Feriado 07h–19h"] for d in specials)
-    for p1, p2 in [(ana, dani), (ana, suzana), (dani, suzana)]:
-        diff = model.NewIntVar(0, len(specials), f"diff_special_{p1}_{p2}")
-        model.AddAbsEquality(diff, counts[p1] - counts[p2])
-        penalties.append(diff * 8)
+    # A rotação dos domingos já é uma regra obrigatória.
+    # Feriados que não caem no domingo continuam sendo considerados apenas
+    # pelas demais regras de distribuição, sem alterar a sequência dominical.
 
     # Minimizar plantonista extra e dobradinhas.
     # Também equilibrar a quantidade de dobradinhas entre Ana e Danielle.
@@ -482,7 +479,8 @@ with st.expander("Regras aplicadas nesta versão"):
         """
 - Segunda a sexta: Suzana das 10h às 19h; Ana ou Danielle das 7h às 16h.
 - Sábado: Ana e Danielle, uma em cada horário diurno.
-- Domingo e feriado: uma veterinária entre Ana, Danielle e Suzana.
+- Domingos: rotação obrigatória entre Ana, Danielle e Suzana na ordem definida pelo primeiro domingo (ex.: Danielle, Ana, Suzana, Danielle...).
+- Feriados: uma veterinária entre Ana, Danielle e Suzana.
 - Nicolle trabalha apenas nas noites fixadas.
 - Demais noites divididas entre Ana e Danielle.
 - Plantonista extra apenas em noites de sábado ou domingo e somente quando necessário.
